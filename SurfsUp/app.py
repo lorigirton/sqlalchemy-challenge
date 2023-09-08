@@ -54,26 +54,57 @@ def welcome():
     )
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    return jsonify(session.query(measurement.date, measurement.prcp).all())
+    results = session.query(measurement.date, measurement.prcp).filter(measurement.date >= dt.date(2016, 8, 23)).all()
+    clean_results = {}
+
+    for row in results:
+        date= row[0]
+        prcp= row[1]
+        clean_results[date]=prcp
+
+    session.close()
+    return jsonify(clean_results)
 
 @app.route("/api/v1.0/stations")
 def stations():
-    return jsonify(session.query(station.station).all())
+    results = session.query(measurement.station).all()
+    station_results = []
+
+    for row in results:
+        station= row[0]
+        station_results.append(station) 
+
+    session.close()  
+    return jsonify(station_results)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    return jsonify(session.query(measurement.date, measurement.tobs).filter(measurement.station=='USC00519281').all())
+    results= session.query(measurement.date, measurement.tobs).\
+    filter(measurement.station == 'USC00519281').\
+    filter(measurement.date >= dt.date(2016, 8, 23)).all()
+
+    tobs_results = {}
+
+    for row in results:
+        date= row[0]
+        tobs= row[1]
+        tobs_results[date]=tobs
+
+    session.close()
+    return jsonify(tobs_results)
 
 @app.route("/api/v1.0/<start>")
 def start(start):
-    return jsonify(session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).all())
+    results=session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).all()
+    session.close()
+    return jsonify(results)
 
 @app.route("/api/v1.0/<start>/<end>")
 def startend(start, end):
-    return jsonify(session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all())
+    results=session.query(func.min(measurement.tobs), func.avg(measurement.tobs), func.max(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all()
+    session.close()
+    return jsonify(results)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-session.close()
 
